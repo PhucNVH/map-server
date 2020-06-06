@@ -1,52 +1,46 @@
 const express = require('express'),
   router = express.Router();
-const Admin = require('../models/Admin');
-const crypto = require('crypto');
+const User = require('../models/User');
+const passport = require('passport');
 
+const isNotAuthenticated = require('../middlewares/isNotAuthenticate');
 router.get('/', (req, res) => {
   res.redirect('auth/login');
 });
 
 router.get('/login', (req, res) => {
-  res.render('loginPage');
+  res.send('login');
 });
 
-router.post('/login', (req, res) => {
-  username = req.body.username;
-  password = req.body.password;
-  hashPassword = crypto.createHash('md5').update(password).digest('hex');
-  userdata = {
-    username: username,
-    password: password,
-  };
-  Admin.findOne(userdata, function (err, response) {
-    if (response) {
-      res.json(response);
-    } else {
-      res.json({error: 'user not found'});
-    }
-  });
+router.post('/login', passport.authenticate('local'), function (req, res) {
+  const userData = (({username, email, pairDevices, _id}) => {
+    return {username, email, pairDevices, _id};
+  })(req.user.toJSON());
+  res.json(userData);
+});
+
+router.post('/logout', passport.authenticate('local'), function (req, res) {
+  req.logout();
+  res.json({state: 'logged Out'});
 });
 
 router.get('/signup', (req, res) => {
   res.render('signupPage');
 });
 
-router.post('/signup', (req, res) => {
-  username = req.body.username;
-  password = req.body.password;
-  hashPassword = crypto.createHash('md5').update(password).digest('hex');
-  var newAdmin = new Admin({
-    username: username,
-    password: hashPassword,
-    isActive: false,
-  });
-  newAdmin.save(function (err, Person) {
-    if (err) res.send('error');
-    else {
-      res.send('true');
+router.post('/signup', isNotAuthenticated, (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  User.register({username, isActive: true}, password, function (err, data) {
+    if (err) {
+      res.json({error: err});
+    } else {
+      var authenticate = User.authenticate();
+      authenticate(username, password, (err, result) => {
+        if (err) console.log(err);
+        res.json(result.toJSON());
+      });
     }
   });
 });
-
 module.exports = router;

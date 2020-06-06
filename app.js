@@ -2,22 +2,47 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 
+const passport = require('passport');
+const expressSession = require('express-session');
+const LocalStrategy = require('passport-local').Strategy;
+
+const User = require('./models/User');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
-// firebase initialize
-var admin = require('firebase-admin');
-var serviceAccount = require('./config/ttcnpm-map-firebase-adminsdk.json');
+app.use(
+  expressSession({
+    secret: 'keyboardhero',
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://ttcnpm-map.firebaseio.com',
-});
-
-var mongoose = require('mongoose');
-mongoose.connect(
-  'mongodb://heroku_5xp0r0k1:5uje47hk0p5ggshirm89pl81do@ds043917.mlab.com:43917/heroku_5xp0r0k1',
+    resave: false,
+    saveUninitialized: false,
+    name: 'sid',
+    cookie: {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    },
+  }),
 );
+app.use(passport.initialize());
+app.use(passport.session());
+
+// use static authenticate method of model in LocalStrategy
+passport.use(new LocalStrategy(User.authenticate()));
+// use static serialize and deserialize of model for passport session support
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+const mongoose = require('mongoose');
+mongoose
+  .connect(
+    'mongodb+srv://3P1N:wHRSL5QyXLlVkXfH@cluster0-ehqku.azure.mongodb.net/dadn-map?retryWrites=true&w=majority',
+  )
+  .then(() => {
+    console.log('OK');
+  })
+  .catch((e) => {
+    console.log(e);
+  });
 
 app.set('view engine', 'ejs');
 app.use(require('./controllers'));

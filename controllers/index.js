@@ -1,14 +1,11 @@
 const express = require('express'),
   router = express.Router();
 
-const firebase = require('firebase-admin');
-
-router.use('/users', require('./users.js'));
+router.use('/user', require('./user.js'));
 
 router.use('/auth', require('./auth.js'));
 
 router.get('/', (req, res) => {
-  console.log(firebase);
   res.render('index');
 });
 
