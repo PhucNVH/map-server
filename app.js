@@ -44,4 +44,5 @@ mongoose
 
 app.set('view engine', 'ejs');
 app.use(require('./controllers'));
-app.listen(3000, () => console.log('Gator app listening on port 3000!'));
+var port = process.env.PORT || 1337;
+app.listen(port, () => console.log('Gator app listening!'));
